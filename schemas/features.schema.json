@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/doodlemania2/fleet-presence-dispatch/schemas/features.schema.json",
+  "title": "presence/features.json",
+  "type": "object",
+  "required": ["property", "audiences", "features"],
+  "additionalProperties": false,
+  "properties": {
+    "property": { "type": "string", "enum": ["tdp", "tdpdf", "documenso", "masscast", "claviger", "chores", "antiphona"] },
+    "audiences": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" } },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "status", "summary", "audiences", "sources"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "name": { "type": "string" },
+          "status": { "enum": ["building", "ready"] },
+          "summary": { "type": "string", "maxLength": 160, "description": "One plain sentence for the people who use it." },
+          "audiences": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+          "headline": { "type": "boolean", "description": "Gets a marketing video (requirement 5)." },
+          "screens": { "type": "array", "items": { "type": "string" } },
+          "sources": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "Globs, relative to the repo root." }
+        }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "features"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "name": { "type": "string" },
+          "features": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}
