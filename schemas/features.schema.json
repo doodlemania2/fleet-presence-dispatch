@@ -6,7 +6,7 @@
   "required": ["property", "audiences", "features"],
   "additionalProperties": false,
   "properties": {
-    "property": { "type": "string", "enum": ["tdp", "tdpdf", "documenso", "masscast", "claviger", "chores", "antiphona"] },
+    "property": { "type": "string", "enum": ["tdp", "tdpdf", "documenso", "masscast", "claviger", "chores", "antiphona", "foliolum"] },
     "audiences": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" } },
     "features": {
       "type": "array",
