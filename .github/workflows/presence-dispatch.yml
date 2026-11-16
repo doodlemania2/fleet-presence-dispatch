@@ -44,6 +44,12 @@ on:
         description: fleet-presence-dispatch ref to load presence-diff.mjs from
         type: string
         default: main
+      send_socials:
+        description: >-
+          Send feature-shipped to the socials repo. A repo that calls this on two branches (STFoA-Church: staging and
+          main) passes `github.ref_name == 'main'` so a feature is announced once, when it is released.
+        type: boolean
+        default: true
     secrets:
       dispatch_token:
         required: false
@@ -122,7 +128,7 @@ jobs:
 
   socials:
     needs: plan
-    if: needs.plan.outputs.has_token == 'true' && needs.plan.outputs.shipped != '0'
+    if: inputs.send_socials && needs.plan.outputs.has_token == 'true' && needs.plan.outputs.shipped != '0'
     runs-on: ${{ inputs.runner }}
     timeout-minutes: 5
     steps:
