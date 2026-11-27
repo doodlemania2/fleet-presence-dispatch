@@ -5,7 +5,8 @@
 #   on: { push: { branches: [main] } }
 #   jobs:
 #     presence:
-#       uses: doodlemania2/fleet-presence-dispatch/.github/workflows/presence-dispatch.yml@main
+#       uses: doodlemania2/fleet-presence-dispatch/.github/workflows/presence-dispatch.yml@<commit sha>  # main YYYY-MM-DD
+#       # Pin to a SHA (main is protected; Dependabot bumps it). presence-diff.mjs is fetched at the same commit.
 #       with:
 #         property: claviger
 #         targets: '["doodlemania2/claviger-site"]'
@@ -41,9 +42,11 @@ on:
         type: string
         default: doodlemania2/TDPPublic
       kit_ref:
-        description: fleet-presence-dispatch ref to load presence-diff.mjs from
+        description: >-
+          fleet-presence-dispatch ref to load presence-diff.mjs from. Leave empty: it then uses the commit THIS workflow
+          was called at (job.workflow_sha), so pinning `uses:` to a SHA also pins the script. Never set it to a branch.
         type: string
-        default: main
+        default: ''
       send_socials:
         description: >-
           Send feature-shipped to the socials repo. A repo that calls this on two branches (STFoA-Church: staging and
@@ -75,7 +78,7 @@ jobs:
           SHA: ${{ github.sha }}
           REF_NAME: ${{ github.ref_name }}
           PROPERTY: ${{ inputs.property }}
-          KIT_REF: ${{ inputs.kit_ref }}
+          KIT_REF: ${{ inputs.kit_ref || job.workflow_sha }}
         run: |
           set -eu
           if [ -z "${DISPATCH_TOKEN}" ]; then
@@ -84,9 +87,17 @@ jobs:
             exit 0
           fi
           echo "has_token=true" >> "$GITHUB_OUTPUT"
-          curl -fsS "https://raw.githubusercontent.com/doodlemania2/fleet-presence-dispatch/${KIT_REF}/scripts/presence-diff.mjs" \
-            -o "${RUNNER_TEMP}/presence-diff.mjs"
-          diff=$(node "${RUNNER_TEMP}/presence-diff.mjs") || { echo "::warning::presence-diff failed; sending an empty feature list"; diff='{"has_features_file":false,"features_touched":[],"features_shipped":[],"shipped_details":[]}'; }
+          # Never run presence-diff.mjs from a branch: only a 40-hex commit (job.workflow_sha, or a caller's pinned
+          # kit_ref). Otherwise warn and send an empty feature list, so a push never turns red.
+          empty='{"has_features_file":false,"features_touched":[],"features_shipped":[],"shipped_details":[]}'
+          if ! [[ "${KIT_REF}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::warning::kit_ref '${KIT_REF}' is not a commit SHA; not running presence-diff.mjs. Pin uses: to a SHA and drop kit_ref."
+            diff="${empty}"
+          else
+            curl -fsS "https://raw.githubusercontent.com/doodlemania2/fleet-presence-dispatch/${KIT_REF}/scripts/presence-diff.mjs" \
+              -o "${RUNNER_TEMP}/presence-diff.mjs"
+            diff=$(node "${RUNNER_TEMP}/presence-diff.mjs") || { echo "::warning::presence-diff failed; sending an empty feature list"; diff='{"has_features_file":false,"features_touched":[],"features_shipped":[],"shipped_details":[]}'; }
+          fi
           echo "presence-diff: ${diff}"
           payload=$(DIFF="${diff}" node -e '
             const d = JSON.parse(process.env.DIFF);
